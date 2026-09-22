@@ -2,13 +2,13 @@
 
 ## Overview
 
-**DataverseConnection** is a .NET 8 class library that provides reusable, dependency-injectable connection logic for Microsoft Dataverse. It is opinionated about interactive authentication: when used from the CLI you choose between three human-friendly credential types, while library callers can still plug in any `TokenCredential`.
+**DataverseConnection** is a .NET 10 class library that provides reusable, dependency-injectable connection logic for Microsoft Dataverse. It is opinionated about interactive authentication: when used from the CLI you choose between three human-friendly credential types, while library callers can still plug in any `TokenCredential`.
 
 The included `DataverseWhoAmI` console application demonstrates the library and verifies connectivity.
 
 ## Features
 
-- Reusable .NET 8 library for Dataverse connectivity
+- Reusable .NET 10 library for Dataverse connectivity
 - Dependency injection through `AddDataverse`, `AddDataverseWithOrganizationServices`, and `AddDataverseFactory`
 - Three opinionated Azure Identity credential types:
   - `InteractiveBrowserCredential` (**default**)
@@ -22,7 +22,7 @@ The included `DataverseWhoAmI` console application demonstrates the library and 
 
 ## Prerequisites
 
-- .NET 8 SDK
+- .NET 10 SDK
 - Access to a Microsoft Dataverse environment
 - An Azure identity with access to that environment
 
@@ -125,6 +125,7 @@ When you do **not** supply `InteractiveBrowserCredentialOptions`, the library en
 The three built-in types are the opinionated choices for the CLI. When calling the library directly you are not limited to them: set `DataverseOptions.TokenCredential` to any credential — for example `DefaultAzureCredential`, a service principal, or a managed identity. An explicitly supplied `TokenCredential` always takes precedence over `CredentialType` and all credential-specific options.
 
 ```csharp
+using Azure.Core;
 using Azure.Identity;
 
 // Use DefaultAzureCredential (or any TokenCredential) when hosting the library yourself.
@@ -165,9 +166,16 @@ This registers:
 
 ## ServiceClientFactory
 
-Use `IServiceClientFactory` when you need separate `ServiceClient` instances:
+Use `IServiceClientFactory` when you need separate `ServiceClient` instances. Register an `IConfiguration` before resolving the factory, even when you supply the URL through options. An empty configuration is sufficient for this example; applications can use their existing configuration instead (see [Configuration](#configuration)).
 
 ```csharp
+using DataverseConnection;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+var services = new ServiceCollection();
+services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+
 services.AddDataverseFactory(options =>
 {
     options.DataverseUrl = "https://yourorg.crm4.dynamics.com";
@@ -242,7 +250,7 @@ The credential-type strings map to the [opinionated credential types](#selecting
 | `devicecode` | `DeviceCodeCredential` |
 | `azcli` | `AzureCliCredential` |
 
-An unrecognized `DataverseCredentialType` (or legacy `DATAVERSE_CREDENTIAL_TYPE`) throws at startup, listing the valid values.
+An unrecognized `DataverseCredentialType` (or legacy `DATAVERSE_CREDENTIAL_TYPE`) throws when the registered `ServiceClient` or `IServiceClientFactory` is first resolved, listing the valid values. Configuration is validated before the `configureOptions` callback runs, so the callback cannot override an invalid configured credential type.
 
 ### Overriding the defaults
 
