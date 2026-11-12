@@ -23,6 +23,12 @@ namespace DataverseConnection.Internal
                         ? new AzureCliCredential()
                         : new AzureCliCredential(options.AzureCliCredentialOptions),
 
+                DataverseCredentialType.Broker => new BrokerTokenCredential(
+                    dataverseUrl ?? options.DataverseUrl,
+                    options.TokenBrokerSocket ?? throw new InvalidOperationException(
+                        "DataverseTokenBrokerSocket is required for broker authentication."),
+                    options.BrokerTokenCredentialOptions),
+
                 // Interactive credentials use persistent token caching by default so the user logs in
                 // as rarely as possible. Caller-supplied options are respected as-is.
                 DataverseCredentialType.DeviceCodeCredential =>

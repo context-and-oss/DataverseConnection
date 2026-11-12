@@ -13,12 +13,13 @@ namespace DataverseConnection.Internal
         internal const string DataverseUrlKey = "DataverseUrl";
         internal const string LegacyDataverseUrlKey = "DATAVERSE_URL";
         internal const string DataverseCredentialTypeKey = "DataverseCredentialType";
+        internal const string DataverseTokenBrokerSocketKey = "DataverseTokenBrokerSocket";
         internal const string LegacyDataverseCredentialTypeKey = "DATAVERSE_CREDENTIAL_TYPE";
 
         /// <summary>
-        /// Reads the flat configuration keys <c>DataverseUrl</c> and
-        /// <c>DataverseCredentialType</c>, with support for their legacy uppercase forms,
-        /// and applies them to <paramref name="options"/>.
+        /// Reads the flat keys <c>DataverseUrl</c>, <c>DataverseTokenBrokerSocket</c> and
+        /// <c>DataverseCredentialType</c>, and applies them to <paramref name="options"/>.
+        /// The URL and credential type also support their legacy uppercase forms.
         /// </summary>
         public static void Bind(DataverseOptions options, IConfiguration configuration)
         {
@@ -32,6 +33,9 @@ namespace DataverseConnection.Internal
                     options.DataverseUrl = url;
             }
 
+            if (string.IsNullOrWhiteSpace(options.TokenBrokerSocket))
+                options.TokenBrokerSocket = configuration[DataverseTokenBrokerSocketKey];
+
             var credentialType = GetFirstConfiguredValue(
                 configuration,
                 DataverseCredentialTypeKey,
@@ -43,8 +47,9 @@ namespace DataverseConnection.Internal
                     "browser" => DataverseCredentialType.InteractiveBrowserCredential,
                     "devicecode" => DataverseCredentialType.DeviceCodeCredential,
                     "azcli" => DataverseCredentialType.AzureCliCredential,
+                    "broker" => DataverseCredentialType.Broker,
                     _ => throw new ArgumentException(
-                        $"Unknown {DataverseCredentialTypeKey} '{credentialType}'. Valid values: browser, devicecode, azcli.")
+                        $"Unknown {DataverseCredentialTypeKey} '{credentialType}'. Valid values: browser, devicecode, azcli, broker.")
                 };
             }
         }

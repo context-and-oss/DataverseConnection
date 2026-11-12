@@ -33,6 +33,9 @@ public class DataverseOptionsBinderTests
     [InlineData("DataverseCredentialType", "azcli", DataverseCredentialType.AzureCliCredential)]
     [InlineData("DataverseCredentialType", "devicecode", DataverseCredentialType.DeviceCodeCredential)]
     [InlineData("DataverseCredentialType", "browser", DataverseCredentialType.InteractiveBrowserCredential)]
+    [InlineData("DataverseCredentialType", "broker", DataverseCredentialType.Broker)]
+    [InlineData("DataverseCredentialType", "  BROKER  ", DataverseCredentialType.Broker)]
+    [InlineData("DATAVERSE_CREDENTIAL_TYPE", "broker", DataverseCredentialType.Broker)]
     [InlineData("DataverseCredentialType", "AZCLI", DataverseCredentialType.AzureCliCredential)]
     [InlineData("DataverseCredentialType", "  DeviceCode  ", DataverseCredentialType.DeviceCodeCredential)]
     [InlineData("DATAVERSE_CREDENTIAL_TYPE", "azcli", DataverseCredentialType.AzureCliCredential)]
@@ -73,6 +76,27 @@ public class DataverseOptionsBinderTests
         DataverseOptionsBinder.Bind(options, Config(("DataverseUrl", "https://config.crm4.dynamics.com")));
 
         Assert.Equal("https://explicit.crm4.dynamics.com", options.DataverseUrl);
+    }
+
+    [Fact]
+    public void Bind_ReadsBrokerSocket_FromConfiguration()
+    {
+        var options = new DataverseOptions();
+        DataverseOptionsBinder.Bind(options, Config(
+            ("DataverseCredentialType", "broker"),
+            ("DataverseTokenBrokerSocket", "/tmp/configured.sock")));
+
+        Assert.Equal(DataverseCredentialType.Broker, options.CredentialType);
+        Assert.Equal("/tmp/configured.sock", options.TokenBrokerSocket);
+    }
+
+    [Fact]
+    public void Bind_DoesNotOverwriteExplicitBrokerSocket()
+    {
+        var options = new DataverseOptions { TokenBrokerSocket = "/tmp/explicit.sock" };
+        DataverseOptionsBinder.Bind(options, Config(("DataverseTokenBrokerSocket", "/tmp/configured.sock")));
+
+        Assert.Equal("/tmp/explicit.sock", options.TokenBrokerSocket);
     }
 
     [Fact]

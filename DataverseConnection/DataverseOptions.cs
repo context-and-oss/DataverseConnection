@@ -4,7 +4,7 @@ using Azure.Identity;
 namespace DataverseConnection
 {
     /// <summary>
-    /// Selects the Azure Identity credential used to authenticate with Dataverse.
+    /// Selects the token credential used to authenticate with Dataverse.
     /// </summary>
     public enum DataverseCredentialType
     {
@@ -21,7 +21,12 @@ namespace DataverseConnection
         /// <summary>
         /// Uses <see cref="InteractiveBrowserCredential"/> exclusively. This is the default.
         /// </summary>
-        InteractiveBrowserCredential = 3
+        InteractiveBrowserCredential = 3,
+
+        /// <summary>
+        /// Uses <see cref="BrokerTokenCredential"/> exclusively, with no identity fallback.
+        /// </summary>
+        Broker = 4
     }
 
     /// <summary>
@@ -39,6 +44,17 @@ namespace DataverseConnection
         /// The default is <see cref="DataverseCredentialType.InteractiveBrowserCredential"/>.
         /// </summary>
         public DataverseCredentialType CredentialType { get; set; } = DataverseCredentialType.InteractiveBrowserCredential;
+
+        /// <summary>
+        /// Absolute Unix-domain socket path for broker authentication. Read from
+        /// IConfiguration's DataverseTokenBrokerSocket when using AddDataverse*.
+        /// </summary>
+        public string? TokenBrokerSocket { get; set; }
+
+        /// <summary>
+        /// Timeout and response-size limits used when CredentialType is Broker.
+        /// </summary>
+        public BrokerTokenCredentialOptions? BrokerTokenCredentialOptions { get; set; }
 
         /// <summary>
         /// An explicitly provided Azure credential. When set, this takes precedence over
