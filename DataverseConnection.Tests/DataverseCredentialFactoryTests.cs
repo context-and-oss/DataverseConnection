@@ -148,13 +148,50 @@ public class DataverseCredentialFactoryTests
     }
 
     [Fact]
-    public void Create_UsesExplicitTokenCredentialBeforeSelectedType()
+    public void Create_ReturnsBrokerCredential()
+    {
+        var options = new DataverseOptions
+        {
+            DataverseUrl = "https://org.crm4.dynamics.com",
+            CredentialType = DataverseCredentialType.Broker,
+            TokenBrokerSocket = "/tmp/dataverse-broker.sock"
+        };
+
+        Assert.IsType<BrokerTokenCredential>(DataverseCredentialFactory.Create(options));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void Create_BrokerWithoutSocket_FailsClosed(string? socket)
+    {
+        var options = new DataverseOptions
+        {
+            CredentialType = DataverseCredentialType.Broker,
+            TokenBrokerSocket = socket
+        };
+
+        if (socket is null)
+            Assert.Throws<InvalidOperationException>(() =>
+                DataverseCredentialFactory.Create(options, "https://org.crm4.dynamics.com"));
+        else
+            Assert.Throws<ArgumentException>(() =>
+                DataverseCredentialFactory.Create(options, "https://org.crm4.dynamics.com"));
+    }
+
+    [Theory]
+    [InlineData(DataverseCredentialType.AzureCliCredential)]
+    [InlineData(DataverseCredentialType.Broker)]
+    public void Create_UsesExplicitTokenCredentialBeforeSelectedType(DataverseCredentialType credentialType)
     {
         var explicitCredential = new TestTokenCredential();
         var options = new DataverseOptions
         {
-            CredentialType = DataverseCredentialType.AzureCliCredential,
-            TokenCredential = explicitCredential
+            CredentialType = credentialType,
+            TokenCredential = explicitCredential,
+            // These broker settings must not be validated when an explicit credential is supplied.
+            BrokerTokenCredentialOptions = new BrokerTokenCredentialOptions { Timeout = TimeSpan.Zero }
         };
 
         var credential = DataverseCredentialFactory.Create(options);

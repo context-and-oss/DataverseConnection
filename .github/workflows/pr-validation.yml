@@ -21,6 +21,9 @@ jobs:
       - name: Build DataverseConnection
         run: dotnet build DataverseConnection/DataverseConnection.csproj --configuration Release
 
+      - name: Test DataverseConnection
+        run: dotnet test DataverseConnection.Tests/DataverseConnection.Tests.csproj --configuration Release
+
       - name: Pack DataverseConnection
         run: dotnet pack DataverseConnection/DataverseConnection.csproj --configuration Release --no-build -o local-nuget /p:Version=1.0.0-localpr
 
@@ -33,3 +36,13 @@ jobs:
 
       - name: Build WhoAmI
         run: dotnet build DataverseWhoAmI/DataverseWhoAmI.csproj --configuration Release --no-restore
+
+  ci:
+    needs: build
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful build and tests
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: test "$BUILD_RESULT" = "success"
